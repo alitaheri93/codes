@@ -94,13 +94,85 @@ print("\nFailed imports:")
 for package, error in failed_imports:
     print(f"- {package}: {error}")
 
+def plot_predictions(name, y_pred_train, y_train, y_pred_test, y_valtest, logscaled=True, xylim=True):
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-from sklearn.model_selection import KFold
-import optuna
+    xlims, ylims = 1e-5, 1e-5
+    plt.figure(figsize=(8, 12), dpi=1200)
+    gs = GridSpec(3, 2, height_ratios=[1, 2, 2], hspace=0.3, wspace=0.3)  # Adjusted height ratio and spacing
+
+    # KDE plot for Train in the first row, first column
+    ax1 = plt.subplot(gs[0, 0])  # ax1 is used for KDE (Train)
+    sns.kdeplot(y_pred_train.squeeze(), color='green', label='Predicted Values')
+    sns.kdeplot(y_train.squeeze(), color='royalblue', label='Actual Values')
+    plt.xlabel('Value', fontsize=6,fontfamily='Liberation Sans')
+    plt.ylabel('Distribution (%)', fontsize=6,fontfamily='Liberation Sans')
+    plt.xticks(fontsize=6,fontfamily='Liberation Sans')
+    plt.yticks(fontsize=6,fontfamily='Liberation Sans')
+    ax1.set_xlim(left=0)
+    ax1.annotate('a. KDE (Training)', xy=(0.5, -0.28), xycoords='axes fraction', 
+                 ha="center", va="top", fontsize='medium', fontweight='semibold', fontstretch='semi-expanded',fontfamily='Liberation Sans')
+    if logscaled:
+        plt.xscale('log')
+    if xylim:       
+        plt.xlim([xlims, plt.xlim()[1]])
+        plt.ylim([ylims, plt.ylim()[1]])
+    plt.legend(fontsize=6)
+
+    # KDE plot for Test in the first row, second column
+    ax2 = plt.subplot(gs[0, 1])  # ax2 is used for KDE (Test)
+    sns.kdeplot(y_pred_test.squeeze(), color='green', label='Predicted Values')
+    sns.kdeplot(y_valtest.squeeze(), color='royalblue', label='Actual Values')
+    plt.xlabel('Value', fontsize=6,fontfamily='Liberation Sans')
+    plt.ylabel('Distribution (%)', fontsize=6,fontfamily='Liberation Sans')
+    plt.xticks(fontsize=5,fontfamily='Liberation Sans')
+    plt.yticks(fontsize=6,fontfamily='Liberation Sans')
+    ax2.set_xlim(left=0)
+    ax2.annotate('b. KDE (Testing)', xy=(0.5, -0.28), xycoords='axes fraction', 
+                 ha="center", va="top", fontsize='medium', fontweight='semibold', fontstretch='semi-expanded',fontfamily='Liberation Sans')
+    if logscaled:
+        plt.xscale('log')
+    if xylim:       
+        plt.xlim([xlims, plt.xlim()[1]])
+        plt.ylim([ylims, plt.ylim()[1]])
+    plt.legend(fontsize=6)
+
+    # Train scatterplot for the predicted vs actual values in the second row, first column
+    ax3 = plt.subplot(gs[1, 0])  # ax3 is used for Scatter (Train)
+    sns.scatterplot(x=y_pred_train.ravel(), y=y_train.squeeze(), color='green', s=15)
+    plt.plot(y_train, y_train, color="black", linestyle="--", linewidth=1)
+    ax3.annotate('c. Training', xy=(0.5, -0.14), xycoords='axes fraction', 
+                 ha="center", va="top", fontsize='medium', fontweight='semibold', fontstretch='semi-expanded',fontfamily='Liberation Sans')
+    plt.xlabel('Predicted', fontsize=6,fontfamily='Liberation Sans')
+    plt.ylabel('Actual', fontsize=6,fontfamily='Liberation Sans')
+    plt.xticks(fontsize=6,fontfamily='Liberation Sans')
+    plt.yticks(fontsize=6,fontfamily='Liberation Sans')
+    if logscaled:
+        plt.xscale('log')
+        plt.yscale('log')
+    if xylim:       
+        plt.xlim([xlims, plt.xlim()[1]])
+        plt.ylim([ylims, plt.ylim()[1]])
+
+    # Test scatterplot for the predicted vs actual values in the second row, second column
+    ax4 = plt.subplot(gs[1, 1])  # ax4 is used for Scatter (Test)
+    sns.scatterplot(x=y_pred_test.ravel(), y=y_valtest.squeeze(), color='royalblue', s=15)
+    plt.plot(y_valtest, y_valtest, color="black", linestyle="--", linewidth=1)
+    ax4.annotate('d. Testing', xy=(0.5, -0.14), xycoords='axes fraction', 
+                 ha="center", va="top", fontsize='medium', fontweight='semibold', fontstretch='semi-expanded',fontfamily='Liberation Sans')
+    plt.xlabel('Predicted', fontsize=6,fontfamily='Liberation Sans')
+    plt.ylabel('Actual', fontsize=6,fontfamily='Liberation Sans')
+    plt.xticks(fontsize=6,fontfamily='Liberation Sans')
+    plt.yticks(fontsize=6,fontfamily='Liberation Sans')
+    if logscaled:
+        plt.xscale('log')
+        plt.yscale('log')
+    if xylim:       
+        plt.xlim([xlims, plt.xlim()[1]])
+        plt.ylim([ylims, plt.ylim()[1]])
+        
+    #plt.tight_layout()
+    filename = f'TruePred_{name}.svg'
+    plt.savefig(filename, bbox_inches='tight', format='svg')
 
 class DynamicPINN(nn.Module):
     def __init__(self, layer_sizes, activations, dropout_rate=0.3):
